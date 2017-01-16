@@ -72,7 +72,7 @@ public interface Config {
     double kF = 0.00;
     
     double kToleranceDegrees = 2.0f;
-	
+
 	
 	//controls
 	//driver
@@ -97,4 +97,6 @@ public interface Config {
 	int WINCH_DOWN_BUTTON = 8;
 	
 	int SHOOTER_DISTANCE_BUTTON = 4;
+	
+	
 }

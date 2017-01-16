@@ -1,5 +1,8 @@
 package org.usfirst.frc.team811.robot.subsystems;
 
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.PIDController;
+import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.command.Subsystem;
 //import javafx.scene.image.Image;
@@ -12,16 +15,23 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.*;
+
 //import org.opencv.core.*;
 //import org.opencv.imgcodecs.Imgcodecs;
 //import org.opencv.imgproc.Imgproc;
 //import org.opencv.videoio.VideoCapture;
 import javax.imageio.ImageIO;
 
+
+
+
+
 //import org.usfirst.frc.team811.robot.commands.imagetrack;
 import org.usfirst.frc.team811.robot.Config;
 import org.usfirst.frc.team811.robot.Robot;
 import org.usfirst.frc.team811.robot.RobotMap;
+
+import com.kauailabs.navx.frc.AHRS;
 
 public class Vision extends Subsystem implements Config {
 	private double[] cenX;
@@ -33,6 +43,21 @@ public class Vision extends Subsystem implements Config {
 	private double[] defaultValue = new double[1];
 
 	RobotDrive driveTrain = RobotMap.driveTrain;
+
+	
+	AHRS ahrs = RobotMap.ahrs;
+	
+	PIDController turnController = RobotMap.turnController;
+	
+	double rotateToAngleRate;
+    
+    /* The following PID Controller coefficients will need to be tuned */
+    /* to match the dynamics of your drive system.  Note that the      */
+    /* SmartDashboard in Test mode has support for helping you tune    */
+    /* controllers by displaying a form where you can enter new P, I,  */
+    /* and D constants and test the mechanism.                         */
+    
+    
 
 	@Override
 	protected void initDefaultCommand() {
@@ -63,7 +88,61 @@ public class Vision extends Subsystem implements Config {
 		return index;
 	}
 	
+	public void gyroTurn() {
+		
+		double currentRotationRate;
+		
+		defaultValue[0] = 0;
+		cenX = RobotMap.visionTable.getNumberArray("centerX", defaultValue);
+		
+		//needs distance from camera to U in inches (d = distance) 
+		//from distance, find width of camera view
+		//then equate pixels to inches
+		//then w = distance from center screen to center of U
+		//then sin(x) = w/d
+		
+		double d = SmartDashboard.getDouble("distance");
+		double i = (.274728886 * d + 42.40897141); //inches displayed in screen
+
+		double r = Math.atan((1/2d) * (1-(cenX[indexOfContour()]/130)));
+			//angle needed to move in radians
+		double x = -1 * Math.toDegrees(r); //angle needed to move in degrees
+		
+		double dif = ahrs.getAngle() - x;
+	
+		
+		turnController = new PIDController(kP, kI, kD, kF, ahrs, (PIDOutput) this);
+        turnController.setInputRange(-180.0f,  180.0f);
+        turnController.setOutputRange(-1.0, 1.0);
+        turnController.setAbsoluteTolerance(kToleranceDegrees);
+        turnController.setContinuous(true);
+        
+        turnController.setSetpoint(dif);
+        
+        turnController.enable();
+        currentRotationRate = rotateToAngleRate;
+        
+        try {
+            /* Use the joystick X axis for lateral movement,          */
+            /* Y axis for forward movement, and the current           */
+            /* calculated rotation rate (or joystick Z axis),         */
+            /* depending upon whether "rotate to angle" is active.    */
+            driveTrain.mecanumDrive_Cartesian(0, 0, 
+                                           currentRotationRate, ahrs.getAngle());
+        } catch( RuntimeException ex ) {
+            DriverStation.reportError("Error communicating with drive system:  " + ex.getMessage(), true);
+        }
+        
+        
+        
+        
+		
+	}
+	
+	
 	public void turnAuto() {
+		
+		
 		
 		height = RobotMap.visionTable.getNumberArray("height", defaultValue);
 		width = RobotMap.visionTable.getNumberArray("width", defaultValue);

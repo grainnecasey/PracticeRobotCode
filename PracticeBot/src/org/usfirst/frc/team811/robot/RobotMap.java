@@ -7,6 +7,8 @@ import edu.wpi.first.wpilibj.interfaces.Gyro;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.networktables.NetworkTable;
 */
+import com.kauailabs.navx.frc.AHRS;
+
 import edu.wpi.first.wpilibj.*;
 import edu.wpi.first.wpilibj.networktables.NetworkTable;
 
@@ -30,6 +32,10 @@ public class RobotMap implements Config
     public static RobotDrive driveTrain;
     
     public static NetworkTable visionTable;
+    
+    public static AHRS ahrs;
+    
+    public static PIDController turnController;
    
  
     public void init() 
@@ -46,5 +52,7 @@ public class RobotMap implements Config
                 drivefrontright, drivebackright);
 
         visionTable = NetworkTable.getTable("GRIP/811Contour");
+        
+        ahrs = new AHRS(SPI.Port.kMXP);
     }
 }
