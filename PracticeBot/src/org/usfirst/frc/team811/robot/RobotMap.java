@@ -1,12 +1,14 @@
 package org.usfirst.frc.team811.robot;
 
-//import com.kauailabs.navx.frc.AHRS;
-/*
+/*import com.kauailabs.navx.frc.AHRS;
+
 import edu.wpi.first.wpilibj.CounterBase.EncodingType;
 import edu.wpi.first.wpilibj.interfaces.Gyro;
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.networktables.NetworkTable;
 */
+
+
 import com.kauailabs.navx.frc.AHRS;
 
 import edu.wpi.first.wpilibj.*;
@@ -54,5 +56,8 @@ public class RobotMap implements Config
         visionTable = NetworkTable.getTable("GRIP/811Contour");
         
         ahrs = new AHRS(SPI.Port.kMXP);
+        
+        //turnController = new PIDController(kP, kI, kD, kF, ahrs,
+			//	(PIDOutput) this);
     }
 }

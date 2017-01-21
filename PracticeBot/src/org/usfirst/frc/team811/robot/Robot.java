@@ -3,6 +3,7 @@ package org.usfirst.frc.team811.robot;
 import java.io.IOException;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
+import edu.wpi.first.wpilibj.NamedSendable;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
@@ -10,6 +11,7 @@ import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.networktables.NetworkTable;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 
 
 //import org.opencv.core.Core;
@@ -115,6 +117,11 @@ public class Robot extends IterativeRobot
 		if (autonomousCommand != null)
 			autonomousCommand.cancel();
 		SmartDashboard.putDouble("distance", 0);
+		
+		SmartDashboard.putNumber("kP", 0.1);
+		SmartDashboard.putNumber("kI", 0.00);
+		SmartDashboard.putNumber("kD", 0.20);
+		SmartDashboard.putNumber("kF", 0.00);
 	}
 
 	/**
@@ -135,6 +142,12 @@ public class Robot extends IterativeRobot
 		defaultValue[0] = 0;
 		//cenY = RobotMap.visionTable.getNumberArray("centerY", defaultValue);
 		Scheduler.getInstance().run();
+		
+		
+		
+		
+		
+		SmartDashboard.putNumber("gyro value", RobotMap.ahrs.getYaw());
 		/*
 		SmartDashboard.putNumber("gyro value", RobotMap.ahrs.getYaw());
 		SmartDashboard.putNumber("drive encoder distance",

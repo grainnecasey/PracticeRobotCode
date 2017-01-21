@@ -66,7 +66,7 @@ public interface Config {
 	int CLIMBER_REVERSE_LIMIT = 0; 	//TODO
 	int CLIMBER_DIFFERENCE_VALUE = 20; 	//TODO
 	
-	double kP = 0.03;
+	double kP = 0.04;
     double kI = 0.00;
     double kD = 0.00;
     double kF = 0.00;
