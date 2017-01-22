@@ -53,8 +53,8 @@ public interface Config {
 	double turnR = 1;
 	double turnL = -1;
 	int framethres = 5;
-	int framesizeX = 250;
-	int framesizeY = 250;
+	int framesizeX = 260;
+	int framesizeY = 195;
 	double AREA_TO_DISTANCE = 30/600; //TODO distance/area 	
 	double HEIGHT_TO_DISTANCE = 30/600; //TODO distance/height
 	

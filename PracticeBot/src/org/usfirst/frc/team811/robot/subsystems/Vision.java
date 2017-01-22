@@ -89,7 +89,7 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 	
 
 
-	public int indexOfContour() {
+	public int indexOfContour() { 
 		height = RobotMap.visionTable.getNumberArray("height", defaultValue);
 		width = RobotMap.visionTable.getNumberArray("width", defaultValue);
 
@@ -101,8 +101,8 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 			return -1;
 		}
 
-		final double heightLimit = 35; // picked something high to start
-		final double widthLimit = 25; 
+		final double heightLimit = 27;	// smallest it can be to be full
+		final double widthLimit = 77; 	
 		
 		// is the target too small?
 		targetLost = true;  // assume it is to start
@@ -123,9 +123,10 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 		// 2m away: h: 42; w: 58; a: 400-500
 		// 2.5m away: h: 36; w: 50; a: 300-380
 		// 3. away: h: 35; w: 50; a: 200-300
-		double errorH = 38; // average of heights at every 1/2 meter within
+		//TODO
+		double errorH = 33; // average of heights at every 1/2 meter within
 							// range
-		double errorW = 51; // ^^ same with widths
+		double errorW = 83; // ^^ same with widths
 
 		
 		// finds which contour is most like the U shape should be
@@ -133,8 +134,8 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 			
 			// what happens if the you pick up something that is small, 
 			// if the height is 5 if will still pass this test but 5 is pretty small
-			double eH = 38 - height[i];
-			double eW = 51 - width[i];
+			double eH = 33 - height[i];
+			double eW = 83 - width[i];
 			if (Math.abs(eH) < errorH && Math.abs(eW) < errorW) {
 				errorH = Math.abs(eH);
 				errorW = Math.abs(eW);
@@ -389,6 +390,10 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 		 * area = RobotMap.visionTable.getNumberArray("area", defaultValue);
 		 * double distance = area[0] * AREA_TO_DISTANCE; return distance;
 		 */
+		
+		//distance = Target height in ft. (10/12) * YRes / (2 * PixelHeight * tan(viewAngle of camera))
+		
+
 		cenY = RobotMap.visionTable.getNumberArray("centerY", defaultValue);
 
 		double height;
