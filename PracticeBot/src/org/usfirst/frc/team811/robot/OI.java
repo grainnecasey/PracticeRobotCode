@@ -89,6 +89,7 @@ public class OI implements Config
 		SmartDashboard.putData("servo preset", new servo_preset());
 		*/
 		SmartDashboard.putData("vision turn auto", new vision_turn_auto());
+		SmartDashboard.putData("lidar run", new lidar_run());
 		/*
 		SmartDashboard.putData("winch down", new winch_down());
 		

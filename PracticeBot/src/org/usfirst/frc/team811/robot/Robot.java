@@ -2,6 +2,7 @@ package org.usfirst.frc.team811.robot;
 
 import java.io.IOException;
 
+import edu.wpi.first.wpilibj.I2C.Port;
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.NamedSendable;
 import edu.wpi.first.wpilibj.Timer;
@@ -11,6 +12,7 @@ import edu.wpi.first.wpilibj.livewindow.LiveWindow;
 import edu.wpi.first.wpilibj.networktables.NetworkTable;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+
 
 
 
@@ -32,13 +34,14 @@ public class Robot extends IterativeRobot
 	//public static PortcullisLifter lifter;
 	public static Drive drive;
 	//public static Intake intake;
-	//public static Shooter shooter;
+	public static Shooter shooter;
 	public static Vision tracker;
 	//public static ServoCam servocam;
 
 	public static OI oi;
 	public static RobotMap robotMap;
 	//public static Drive drive;
+	public static Lidar lidar;
 
 	Command autonomousCommand;
 	SendableChooser autoChooser;
@@ -57,9 +60,10 @@ public class Robot extends IterativeRobot
 		//lifter = new PortcullisLifter();
 		drive = new Drive();
 		//intake = new Intake();
-		//shooter = new Shooter();
+		shooter = new Shooter();
 		tracker = new Vision();
 		//servocam = new ServoCam();
+		lidar = new Lidar();
 
 		final NetworkTable grip = NetworkTable.getTable("grip");
 

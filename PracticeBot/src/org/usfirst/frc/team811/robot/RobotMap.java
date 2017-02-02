@@ -38,6 +38,9 @@ public class RobotMap implements Config
     public static AHRS ahrs;
     
     public static PIDController turnController;
+    
+    public static SpeedController shootLeft;
+    public static SpeedController shootRight;
    
  
     public void init() 
@@ -47,8 +50,8 @@ public class RobotMap implements Config
         joystick2 = new Joystick(2);
     	
     	drivefrontright = new Talon(FRONT_RIGHT_PORT);
-        drivefrontleft = new Talon(FRONT_LEFT_PORT);
-        drivebackleft = new Talon(BACK_LEFT_PORT);
+        drivefrontleft = new Talon(5);
+        drivebackleft = new Talon(6);
         drivebackright = new Talon(BACK_RIGHT_PORT);
         driveTrain = new RobotDrive(drivefrontleft, drivebackleft,
                 drivefrontright, drivebackright);
@@ -56,6 +59,9 @@ public class RobotMap implements Config
         visionTable = NetworkTable.getTable("GRIP/811Contour");
         
         ahrs = new AHRS(SPI.Port.kMXP);
+        
+        shootLeft = new Talon(3);
+        shootRight = new Talon(2);
         
         //turnController = new PIDController(kP, kI, kD, kF, ahrs,
 			//	(PIDOutput) this);
