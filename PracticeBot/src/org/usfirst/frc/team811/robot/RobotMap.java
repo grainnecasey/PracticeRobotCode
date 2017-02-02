@@ -34,10 +34,12 @@ public class RobotMap implements Config
     public static RobotDrive driveTrain;
     
     public static NetworkTable visionTable;
+    public static NetworkTable gearTable;
     
     public static AHRS ahrs;
     
     public static PIDController turnController;
+    public static PIDController strafeController;
     
     public static SpeedController shootLeft;
     public static SpeedController shootRight;
@@ -57,6 +59,7 @@ public class RobotMap implements Config
                 drivefrontright, drivebackright);
 
         visionTable = NetworkTable.getTable("GRIP/811Contour");
+        gearTable = NetworkTable.getTable("GRIP/811GearContours");
         
         ahrs = new AHRS(SPI.Port.kMXP);
         

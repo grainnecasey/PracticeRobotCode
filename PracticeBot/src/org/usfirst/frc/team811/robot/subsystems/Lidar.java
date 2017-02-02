@@ -70,9 +70,7 @@ private static byte[] distance;
 
 		updater = new java.util.Timer();
 		
-		distance[0] = (byte)0x0;
-		distance[1] = (byte)0x0;
-		i2c.writeBulk(distance);
+		
 
 
 	}
@@ -152,7 +150,11 @@ public double pidGet() {
 	
 		//	i2c.writeBulk(readData);
 			
-			
+		distance[0] = (byte)0x0;
+		distance[1] = (byte)0x4;
+		i2c.writeBulk(distance);	
+		
+		
 			boolean stat = true;
 			
 			while (stat)

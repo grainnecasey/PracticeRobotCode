@@ -24,8 +24,8 @@ public class Shooter extends Subsystem {
     }
     
     public void testTurn() {
-    	double leftSpeed = SmartDashboard.getNumber("shoot left speed");
-    	double rightSpeed = SmartDashboard.getNumber("shoot right speed");
+    	double leftSpeed = -1 * SmartDashboard.getNumber("shoot left speed");
+    	double rightSpeed = -1 * SmartDashboard.getNumber("shoot right speed");
     	
     	shootLeft.set(leftSpeed);
     	shootRight.set(-rightSpeed);

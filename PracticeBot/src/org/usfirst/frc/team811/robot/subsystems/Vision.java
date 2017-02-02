@@ -49,12 +49,21 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 		SmartDashboard.putNumber("pid loop d", -output);
 		driveTrain.arcadeDrive(0.0, -output);
 	}
+	
+	//strafe command from PID controller
+	public void strafePidWrite(double output) {
+		SmartDashboard.putNumber("strafe pid output", -output);
+		//driveTrain.mecanumDrive_Cartesian(-output, 0.0, 0.0, ahrs.getYaw());
+		driveTrain.arcadeDrive(-output, 0);
+	}
 
 	AHRS ahrs = RobotMap.ahrs;
 
 	public PIDController turnController = RobotMap.turnController; // RobotMap.turnController;
+	public PIDController strafeController = RobotMap.strafeController;
 
 	double rotateToAngleRate;
+	double kTolerancePx = 2;
 
 	/* The following PID Controller coefficients will need to be tuned */
 	/* to match the dynamics of your drive system. Note that the */
@@ -75,6 +84,17 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 		
 		LiveWindow.addActuator("DriveSystem", "RotateController", turnController);
 		
+		strafeController = new PIDController(kP, kI, kD, kF, ahrs,
+				(PIDOutput) this);
+			//SmartDashboard.putData((NamedSendable) RobotMap.turnController);
+			strafeController.setInputRange(-130.0f, 130.0f);
+			strafeController.setOutputRange(-.5, .5);
+			strafeController.setAbsoluteTolerance(kTolerancePx);
+			strafeController.setContinuous(true);
+			strafeController.setSetpoint(0.0);
+			
+			LiveWindow.addActuator("DriveSystem", "StrafeController", strafeController);
+		
 	}
 	
 	public void tunePID() {
@@ -87,22 +107,32 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 		
 	}
 	
+	public void strafeTunePID() {
+		double P = SmartDashboard.getNumber("kP");
+		double I = SmartDashboard.getNumber("kI");
+		double D = SmartDashboard.getNumber("kD");
+		double F = SmartDashboard.getNumber("kF");
+		
+		strafeController.setPID(P, I, D, F);
+		
+	}
+	
 
 
-	public int indexOfContour() { 
-		height = RobotMap.visionTable.getNumberArray("height", defaultValue);
-		width = RobotMap.visionTable.getNumberArray("width", defaultValue);
+	public int indexOfContour() {
+		height = RobotMap.gearTable.getNumberArray("height", defaultValue);	//changed to gear one
+		width = RobotMap.gearTable.getNumberArray("width", defaultValue);	//changed to gear one
 
 		// need to worry about what happens when there is no target
 		// what should be returned - maybe -1
 		boolean targetLost = height.length == 0 || width.length == 0;
 		if (targetLost) {
-			SmartDashboard.putString("target Status", "target lost");
+			SmartDashboard.putString("target Status", "no contours");
 			return -1;
 		}
 
-		final double heightLimit = 27;	// smallest it can be to be full
-		final double widthLimit = 77; 	
+		final double heightLimit = 4; // picked something high to start
+		final double widthLimit = 20; 
 		
 		// is the target too small?
 		targetLost = true;  // assume it is to start
@@ -120,13 +150,10 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 		
 		int index = -1;
 
-		// 2m away: h: 42; w: 58; a: 400-500
-		// 2.5m away: h: 36; w: 50; a: 300-380
-		// 3. away: h: 35; w: 50; a: 200-300
-		//TODO
-		double errorH = 33; // average of heights at every 1/2 meter within
+		// 132 inches away from boiler: h = 9; w - 23; a = 140ish
+		double errorH = 9; // average of heights at every 1/2 meter within
 							// range
-		double errorW = 83; // ^^ same with widths
+		double errorW = 30; // ^^ same with widths
 
 		
 		// finds which contour is most like the U shape should be
@@ -134,8 +161,8 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 			
 			// what happens if the you pick up something that is small, 
 			// if the height is 5 if will still pass this test but 5 is pretty small
-			double eH = 33 - height[i];
-			double eW = 83 - width[i];
+			double eH = 9 - height[i];
+			double eW = 30 - width[i];
 			if (Math.abs(eH) < errorH && Math.abs(eW) < errorW) {
 				errorH = Math.abs(eH);
 				errorW = Math.abs(eW);
@@ -155,16 +182,6 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 	}
 
 	public void gyroTurn() {
-		
-		/*double kP = SmartDashboard.getNumber("kP");
-		double kI = SmartDashboard.getNumber("kI");
-		double kD = SmartDashboard.getNumber("kD");
-		double kF = SmartDashboard.getNumber("kF");
-		*/
-		
-		
-
-
 		// ensure that if something bad happens, everything stops
 		// can use a try catch to stop the robot
 		try {
@@ -183,24 +200,35 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 			defaultValue[0] = 0;
 			cenX = RobotMap.visionTable.getNumberArray("centerX", defaultValue);
 
-			// needs distance from camera to U in inches (d = distance)
-			// from distance, find width of camera view
-			// then equate pixels to inches
-			// then w = distance from center screen to center of U
-			// then sin(x) = w/d
-
-			double d = SmartDashboard.getDouble("distance");
-			double i = (.274728886 * d + 42.40897141); // inches displayed in
-														// screen
-
-			double r = Math.atan((1 / 2d)
-					* (1 - (cenX[indexOfTarget] / 130)));
-			// angle needed to move in radians
-			double x = -1 * Math.toDegrees(r); // angle needed to move in
-												// degrees
 			
 
-			double dif = ahrs.getYaw() + x;
+			double d = SmartDashboard.getDouble("distance");
+			double i = (.274728886 * d + 42.40897141);	//42/45 * d; // inches displayed in
+														// screen
+
+			double r =Math.atan((1 / (2d))					//Math.atan(((i / 2) * d)	260/50
+					* (1 - (cenX[indexOfTarget] / 130)));
+			
+			
+			// angle needed to move in radians
+			double x = -1 * Math.toDegrees(r); // angle needed to move in
+			double dif= ahrs.getYaw() +r;
+												// degrees
+			
+			
+			// with a constant field of view (fov)
+			double degreesPerPixel = 60.0/((double)framesizeX);
+			double pixelsFromCenter = 130 - cenX[indexOfTarget];
+			double errorInDegrees = degreesPerPixel * pixelsFromCenter;
+			dif = ahrs.getYaw() - errorInDegrees;
+
+			
+			/*
+			if (cenX[indexOfTarget] > 130) {
+				dif = ahrs.getYaw() + r;
+			} else {
+				dif = ahrs.getYaw() - r;
+			}*/
 			
 			SmartDashboard.putNumber("get setpoint", dif);
 			//double dif = x;
@@ -208,19 +236,7 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 			turnController.setSetpoint(dif);
 			turnController.enable();
 
-			// currentRotationRate = rotateToAngleRate;
-			//
-			// try {
-			// /* Use the joystick X axis for lateral movement, */
-			// /* Y axis for forward movement, and the current */
-			// /* calculated rotation rate (or joystick Z axis), */
-			// /* depending upon whether "rotate to angle" is active. */
-			// driveTrain.mecanumDrive_Cartesian(0, 0,
-			// currentRotationRate, ahrs.getAngle());
-			// } catch( RuntimeException ex ) {
-			// DriverStation.reportError("Error communicating with drive system:  "
-			// + ex.getMessage(), true);
-			// }
+			
 
 		} catch (RuntimeException ex) {
 			// stop the PID loop and stop the robot
@@ -228,39 +244,6 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 			driveTrain.arcadeDrive(0.0, 0.0);
 			throw ex;  // rethrow the exception - hopefully it gets displayed
 		}
-	}
-
-	public void turnAuto() {
-
-		height = RobotMap.visionTable.getNumberArray("height", defaultValue);
-		width = RobotMap.visionTable.getNumberArray("width", defaultValue);
-
-		int index = 0;
-		// 2m away: h: 42; w: 58; a: 400-500
-		// 2.5m away: h: 36; w: 50; a: 300-380
-		// 3. away: h: 35; w: 50; a: 200-300
-		double errorH = 38; // average of heights at every 1/2 meter within
-							// range
-		double errorW = 51;
-		boolean changed = false;
-
-		for (int i = 0; i < height.length - 1; i++) {
-			double eH = 38 - height[i];
-			double eW = 51 - width[i];
-			if (Math.abs(eH) < errorH && Math.abs(eW) < errorW) {
-				errorH = Math.abs(eH);
-				errorW = Math.abs(eW);
-				index = i;
-				changed = true;
-			}
-		}
-
-		if (changed) {
-			positionX();
-		} else {
-			driveTrain.arcadeDrive(0, -0.6);
-		}
-
 	}
 
 	public void positionX() {
@@ -289,6 +272,7 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 			// }
 			driveTrain.arcadeDrive(0, 0);
 			temp = false;
+			
 		}
 
 		/*
@@ -349,27 +333,20 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 		int indexOfTarget = indexOfContour();
 		// if the index is -1 - the target was lost
 		if (indexOfTarget == -1) {
+			SmartDashboard.putBoolean("is centered", false);
 			return false;
 		}
 
 		
-		double centerOfTarget = cenX[indexOfContour()];
+		double centerOfTarget = cenX[indexOfTarget];
 		double centerOfCamera = framesizeX / 2;
-		double error = centerOfTarget = centerOfCamera;
+		double error = centerOfCamera - centerOfTarget;
 
 		boolean isCentered = Math.abs(error) <= framethres;
 		//SmartDashboard.putNumber("get error", centerOfTarget);
 		SmartDashboard.putBoolean("is centered", isCentered);
 
 		return isCentered;
-
-		// if (cenX[indexOfContour()]) {
-		// if ((cenX[indexOfContour()] > framesizeX / 2 - framethres)
-		// && (cenX[indexOfContour()] < framesizeX / 2 + framethres)) {
-		// return true;
-		// } else {
-		// return false;
-		// }
 	}
 
 	/*
@@ -385,28 +362,97 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 	 * return true; } return false;
 	 */
 
-	public double getDistance() {
-		/*
-		 * area = RobotMap.visionTable.getNumberArray("area", defaultValue);
-		 * double distance = area[0] * AREA_TO_DISTANCE; return distance;
-		 */
+	
+	
+	public void gearStrafeCenter() {
 		
-		//distance = Target height in ft. (10/12) * YRes / (2 * PixelHeight * tan(viewAngle of camera))
+		int thresh = 5; 	//threshold of pixels 
+		double dif;
 		
+		double rightTapePx = 198; 	//where right tape should be if centered
+		double leftTapePx = 76; 	//where left tape should be if centered
+		
+		double cen;
+		
+		
+		//input will be the number of pixels it has to move to whatever side
+		
+		try {
 
-		cenY = RobotMap.visionTable.getNumberArray("centerY", defaultValue);
+			int indexOfTarget = indexOfContour();
+			// if the index is -1 - the target was lost
+			if (indexOfTarget == -1) {
+				// what should the robot do?
+				// for not stop and return
+				turnController.setSetpoint(0);
+				return;
+			}
 
-		double height;
+			// double currentRotationRate;
 
-		height = (framesizeY - cenY[indexOfContour()]);
+			defaultValue[0] = 0;
+			cenX = RobotMap.gearTable.getNumberArray("centerX", defaultValue);
+			height = RobotMap.gearTable.getNumberArray("height", defaultValue);
+			
+			
+			if (cenX.length < 2) {
+				if (cenX[0] < 130) {
+					dif = rightTapePx - cenX[0];
+				} else {
+					dif = leftTapePx - cenX[0];
+				}
+			} else {
+				if (cenX[0] > cenX[1]) {
+					cen = Math.abs(cenX[0] - cenX[1]) / 2 + cenX[1];
+				} else {
+					cen = Math.abs(cenX[0] - cenX[1]) / 2 + cenX[0];
+				}
+				
+				//cen is the px of the center between left and right tapes in picture
+				
+				dif = 130 - cen;
+			}
+			
+			SmartDashboard.putNumber("gear setpoint", dif);
+			
+			
+			//then strafe so they are both equal distance from center
+			
+			strafeController.setSetpoint(dif);
+			strafeController.enable();
 
-		SmartDashboard.putNumber("vision height", height);
-
-		double distance = (.02 * height) + 1.196; // needs work - with area??
-		return distance;
-		// return 0.0;
+		} catch (RuntimeException ex) {
+			// stop the PID loop and stop the robot
+			turnController.disable();
+			driveTrain.mecanumDrive_Cartesian(0.0, 0.0, 0.0, 0.0);
+			throw ex;  // rethrow the exception - hopefully it gets displayed
+		}
+		
+		
 	}
-
+	
+	
+//	public double getDistance() {
+//		/*
+//		 * area = RobotMap.visionTable.getNumberArray("area", defaultValue);
+//		 * double distance = area[0] * AREA_TO_DISTANCE; return distance;
+//		 */
+//		
+//		
+//		
+//		cenY = RobotMap.visionTable.getNumberArray("centerY", defaultValue);
+//
+//		double height;
+//
+//		height = (framesizeY - cenY[indexOfContour()]);
+//
+//		SmartDashboard.putNumber("vision height", height);
+//
+//		double distance = (.02 * height) + 1.196; // needs work - with area??
+//		return distance;
+//		// return 0.0;
+//	}
+//
 	/*
 	 * private ScheduledExecutorService timer; private VideoCapture capture;
 	 * private boolean cameraActive;

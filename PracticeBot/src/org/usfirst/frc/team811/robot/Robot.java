@@ -122,6 +122,9 @@ public class Robot extends IterativeRobot
 			autonomousCommand.cancel();
 		SmartDashboard.putDouble("distance", 0);
 		
+		SmartDashboard.putNumber("shoot left speed", 1);
+		SmartDashboard.putNumber("shoot right speed", 1);
+		
 		SmartDashboard.putNumber("kP", 0.1);
 		SmartDashboard.putNumber("kI", 0.00);
 		SmartDashboard.putNumber("kD", 0.20);
@@ -152,6 +155,7 @@ public class Robot extends IterativeRobot
 		
 		
 		SmartDashboard.putNumber("gyro value", RobotMap.ahrs.getYaw());
+		
 		/*
 		SmartDashboard.putNumber("gyro value", RobotMap.ahrs.getYaw());
 		SmartDashboard.putNumber("drive encoder distance",
