@@ -125,9 +125,9 @@ public class Robot extends IterativeRobot
 		SmartDashboard.putNumber("shoot left speed", 1);
 		SmartDashboard.putNumber("shoot right speed", 1);
 		
-		SmartDashboard.putNumber("kP", 0.1);
+		SmartDashboard.putNumber("kP", 1);
 		SmartDashboard.putNumber("kI", 0.00);
-		SmartDashboard.putNumber("kD", 0.20);
+		SmartDashboard.putNumber("kD", 0.);
 		SmartDashboard.putNumber("kF", 0.00);
 	}
 

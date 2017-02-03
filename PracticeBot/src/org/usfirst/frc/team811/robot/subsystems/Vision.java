@@ -26,6 +26,7 @@ import javax.imageio.ImageIO;
 
 
 
+
 //import org.usfirst.frc.team811.robot.commands.imagetrack;
 import org.usfirst.frc.team811.robot.Config;
 import org.usfirst.frc.team811.robot.Robot;
@@ -41,13 +42,19 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 	private double[] width;
 	private double[] cenY;
 	private double[] defaultValue = new double[1];
+	
+	CameraSource camSource = new CameraSource();
 
 	RobotDrive driveTrain = RobotMap.driveTrain;
+	int count = 0;
 
 	// the command from the PID controller
 	public void pidWrite(double output) {
-		SmartDashboard.putNumber("pid loop d", -output);
-		driveTrain.arcadeDrive(0.0, -output);
+		SmartDashboard.putNumber("strafe pid loop d", -output);
+		SmartDashboard.putNumber("strafe error", strafeController.getError());
+		count++;
+		SmartDashboard.putNumber("count", count);
+		//driveTrain.arcadeDrive(-output, 0.0);
 	}
 	
 	//strafe command from PID controller
@@ -73,6 +80,9 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 
 	@Override
 	protected void initDefaultCommand() {
+		
+		
+		
 		turnController = new PIDController(kP, kI, kD, kF, ahrs,
 			(PIDOutput) this);
 		//SmartDashboard.putData((NamedSendable) RobotMap.turnController);
@@ -84,11 +94,11 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 		
 		LiveWindow.addActuator("DriveSystem", "RotateController", turnController);
 		
-		strafeController = new PIDController(kP, kI, kD, kF, ahrs,
+		strafeController = new PIDController(kP, kI, kD, kF, camSource,
 				(PIDOutput) this);
 			//SmartDashboard.putData((NamedSendable) RobotMap.turnController);
-			strafeController.setInputRange(-130.0f, 130.0f);
-			strafeController.setOutputRange(-.5, .5);
+			strafeController.setInputRange(0, 260);
+			strafeController.setOutputRange(-1, 1);
 			strafeController.setAbsoluteTolerance(kTolerancePx);
 			strafeController.setContinuous(true);
 			strafeController.setSetpoint(0.0);
@@ -115,8 +125,7 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 		
 		strafeController.setPID(P, I, D, F);
 		
-	}
-	
+	} 
 
 
 	public int indexOfContour() {
@@ -178,6 +187,8 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 		}
 
 		return index;
+		
+		
 
 	}
 
@@ -362,7 +373,53 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 	 * return true; } return false;
 	 */
 
-	
+public double currentCen() {
+		
+		int thresh = 5; 	//threshold of pixels 
+		double dif;
+		
+		double rightTapePx = 198; 	//where right tape should be if centered
+		double leftTapePx = 76; 	//where left tape should be if centered
+		
+		double cen = 130;
+		
+		
+		//input will be the number of pixels it has to move to whatever side
+		
+		try {
+			defaultValue[0] = 0;
+			cenX = RobotMap.gearTable.getNumberArray("centerX", defaultValue);
+			
+			if (cenX.length < 2 && cenX.length != 0) {
+				if (cenX[0] < 130) {
+					dif = rightTapePx - cenX[0];
+				} else {
+					dif = leftTapePx - cenX[0];
+				}
+			} else {
+				if (cenX[0] > cenX[1] && cenX.length != 0) {
+					cen = Math.abs(cenX[0] - cenX[1]) / 2 + cenX[1];
+				} else {
+					cen = Math.abs(cenX[0] - cenX[1]) / 2 + cenX[0];
+				}
+				
+				//cen is the px of the center between left and right tapes in picture
+				
+				//dif = 130 - cen;
+			}
+			
+			
+
+		} catch (RuntimeException ex) {
+			// stop the PID loop and stop the robot
+			//turnController.disable();
+			//driveTrain.mecanumDrive_Cartesian(0.0, 0.0, 0.0, 0.0);
+			throw ex;  // rethrow the exception - hopefully it gets displayed
+		}
+		
+		return cen;
+
+	}
 	
 	public void gearStrafeCenter() {
 		
@@ -381,12 +438,12 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 
 			int indexOfTarget = indexOfContour();
 			// if the index is -1 - the target was lost
-			if (indexOfTarget == -1) {
+			//if (indexOfTarget == -1) {
 				// what should the robot do?
 				// for not stop and return
-				turnController.setSetpoint(0);
-				return;
-			}
+			//	turnController.setSetpoint(0);
+			//	return;
+			//}
 
 			// double currentRotationRate;
 
@@ -395,14 +452,14 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 			height = RobotMap.gearTable.getNumberArray("height", defaultValue);
 			
 			
-			if (cenX.length < 2) {
+			if (cenX.length < 2 && cenX.length != 0) {
 				if (cenX[0] < 130) {
 					dif = rightTapePx - cenX[0];
 				} else {
 					dif = leftTapePx - cenX[0];
 				}
 			} else {
-				if (cenX[0] > cenX[1]) {
+				if (cenX[0] > cenX[1] && cenX.length != 0) {
 					cen = Math.abs(cenX[0] - cenX[1]) / 2 + cenX[1];
 				} else {
 					cen = Math.abs(cenX[0] - cenX[1]) / 2 + cenX[0];
@@ -413,13 +470,12 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 				dif = 130 - cen;
 			}
 			
-			SmartDashboard.putNumber("gear setpoint", dif);
+			//SmartDashboard.putNumber("gear setpoint", dif);
 			
 			
 			//then strafe so they are both equal distance from center
 			
-			strafeController.setSetpoint(dif);
-			strafeController.enable();
+			
 
 		} catch (RuntimeException ex) {
 			// stop the PID loop and stop the robot
@@ -428,7 +484,15 @@ public class Vision extends Subsystem implements Config, PIDOutput {
 			throw ex;  // rethrow the exception - hopefully it gets displayed
 		}
 		
+		strafeController.setSetpoint(130);
+		SmartDashboard.putNumber("gear setpoint", strafeController.getSetpoint());
+		strafeController.enable();
 		
+		
+	}
+	
+	public void setCamSource() {
+		camSource.setSource(currentCen());
 	}
 	
 	
